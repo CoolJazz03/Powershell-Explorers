@@ -1,0 +1,128 @@
+# Import active directory module for running AD cmdlets
+Import-Module ActiveDirectory
+
+#Create new OU for Company
+
+New-ADOrganizationalUnit -Name "Techno Noobs" -Path "DC=MSSATraining,DC=COM"
+
+#Create User OU in Company OU
+
+New-ADOrganizationalUnit -Name "Users" -Path "OU=Techno Noobs,DC=MSSATraining,DC=COM"
+
+#Create new OU for 10 departments in your company OU
+
+New-ADOrganizationalUnit -Name "Accounting" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "IT Helpdesk" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Customer Support" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Maintenance" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Logistics" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Sales" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "HR" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Financial" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Recruiting" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+New-ADOrganizationalUnit -Name "Planning" -Path "OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM"
+  
+# Store the data from NewUsersFinal.csv in the $ADUsers variable
+$ADUsers = Import-Csv C:\temp\NewUsersFinal.csv -Delimiter ","
+
+# Define UPN
+$UPN = "mssatraining.com"
+
+# Loop through each row containing user details in the CSV file
+foreach ($User in $ADUsers) {
+
+    #Read user data from each field in each row and assign the data to a variable as below
+    $username = $User.username
+    $password = $User.password
+    $firstname = $User.firstname
+    $lastname = $User.lastname
+    $initials = $User.initials
+    $OU = $User.ou #This field refers to the OU the user account is to be created in
+    $email = $User.email
+    $streetaddress = $User.streetaddress
+    $city = $User.city
+    $zipcode = $User.zipcode
+    $state = $User.state
+    $country = $User.country
+    $telephone = $User.telephone
+    $jobtitle = $User.jobtitle
+    $company = $User.company
+    $department = $User.department
+
+    # Check to see if the user already exists in AD
+    if (Get-ADUser -F { SamAccountName -eq $username }) {
+        
+        # If user does exist, give a warning
+        Write-Warning "A user account with username $username already exists in Active Directory."
+    }
+    else {
+
+        # User does not exist then proceed to create the new user account
+        # Account will be created in the OU provided by the $OU variable read from the CSV file
+        New-ADUser `
+            -SamAccountName $username `
+            -UserPrincipalName "$username@$UPN" `
+            -Name "$firstname $lastname" `
+            -GivenName $firstname `
+            -Surname $lastname `
+            -Initials $initials `
+            -Enabled $True `
+            -DisplayName "$lastname, $firstname" `
+            -Path $OU.replace("""","") `
+            -City $city `
+            -PostalCode $zipcode `
+            -Country "US" `
+            -Company $company `
+            -State $state `
+            -StreetAddress $streetaddress `
+            -OfficePhone $telephone `
+            -EmailAddress $email `
+            -Title $jobtitle `
+            -Department $department `
+            -AccountPassword (ConvertTo-secureString $password -AsPlainText -Force) -ChangePasswordAtLogon $True
+
+        # If user is created, show message.
+        Write-Host "The user account $username is created." -ForegroundColor Cyan
+    }
+}
+
+get-aduser -filter "department -eq 'Accounting'" | Set-ADuser -Manager Powitimery
+get-aduser -filter "department -eq 'IT Helpdesk'" | Set-ADuser -Manager Baimet1990
+get-aduser -filter "department -eq 'Customer Support'" | Set-ADuser -Manager Thiameneve
+get-aduser -filter "department -eq 'Maintenance'" | Set-ADuser -Manager Vividem
+get-aduser -filter "department -eq 'Logistics'" | Set-ADuser -Manager Execonverve
+get-aduser -filter "department -eq 'Sales'" | Set-ADuser -Manager Strajamoned
+get-aduser -filter "department -eq 'HR'" | Set-ADuser -Manager Smisprome93 
+get-aduser -filter "department -eq 'Financial'" | Set-ADuser -Manager Soolder
+get-aduser -filter "department -eq 'Recruiting'" | Set-ADuser -Manager Fres1973
+get-aduser -filter "department -eq 'Planning'" | Set-ADuser -Manager Liaxoreated
+
+#Create Manager group on Company OU
+New-ADGroup -Name "TN Department Managers" -SamAccountName TNDepartmentManagers -GroupCategory Security -GroupScope Global -DisplayName "TN Department Managers" -Path "OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are Techno Noobs Department Managers"
+
+#Create groups for each department
+New-ADGroup -Name "TN Accounting" -SamAccountName TNAccounting -GroupCategory Security -GroupScope Global -DisplayName "TN Accounting" -Path "OU=Accounting,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Accounting Department"
+New-ADGroup -Name "TN IT Helpdesk" -SamAccountName TNITHelpdesk -GroupCategory Security -GroupScope Global -DisplayName "TN IT Helpdesk" -Path "OU=IT Helpdesk,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs IT Helpdesk Department"
+New-ADGroup -Name "TN Customer Support" -SamAccountName TNCustomerSupport -GroupCategory Security -GroupScope Global -DisplayName "TN Customer Support" -Path "OU=Customer Support,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Customer Support Department"
+New-ADGroup -Name "TN Maintenance" -SamAccountName TNMaintenance -GroupCategory Security -GroupScope Global -DisplayName "TN Maintenance" -Path "OU=Maintenance,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Maintenance Department"
+New-ADGroup -Name "TN Logistics" -SamAccountName TNLogistics -GroupCategory Security -GroupScope Global -DisplayName "TN Logistics" -Path "OU=Logistics,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Logistics Department"
+New-ADGroup -Name "TN Sales" -SamAccountName TNSales -GroupCategory Security -GroupScope Global -DisplayName "TN Sales" -Path "OU=Sales,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Sales Department"
+New-ADGroup -Name "TN HR" -SamAccountName TNHR -GroupCategory Security -GroupScope Global -DisplayName "TN HR" -Path "OU=HR,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs HR Department"
+New-ADGroup -Name "TN Financial" -SamAccountName TNFinancial -GroupCategory Security -GroupScope Global -DisplayName "TN Financial" -Path "OU=Financial,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Financial Department"
+New-ADGroup -Name "TN Recruiting" -SamAccountName TNRecruiting -GroupCategory Security -GroupScope Global -DisplayName "TN Recruiting" -Path "OU=Recruiting,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Recruiting Department"
+New-ADGroup -Name "TN Planning" -SamAccountName TNPlanning -GroupCategory Security -GroupScope Global -DisplayName "TN Planning" -Path "OU=Planning,OU=Users,OU=Techno Noobs,DC=MSSATraining,DC=COM" -Description "Members of this group are part of the Techno Noobs Planning Department"
+
+#Add Users to groups
+Add-ADGroupMember -identity TNDepartmentManagers -members (get-aduser -filter {title -like '* manager'})
+Add-ADGroupMember -identity TNAccounting -members (get-aduser -filter {department -eq 'Accounting'})
+Add-ADGroupMember -identity TNITHelpdesk -members (get-aduser -filter {department -eq 'IT Helpdesk'})
+Add-ADGroupMember -identity TNCustomerSupport -members (get-aduser -filter {department -eq 'Customer Support'})
+Add-ADGroupMember -identity TNMaintenance -members (get-aduser -filter {department -eq 'Maintenance'})
+Add-ADGroupMember -identity TNLogistics -members (get-aduser -filter {department -eq 'Logistics'})
+Add-ADGroupMember -identity TNSales -members (get-aduser -filter {department -eq 'Sales'})
+Add-ADGroupMember -identity TNHR -members (get-aduser -filter {department -eq 'HR'})
+Add-ADGroupMember -identity TNFinancial -members (get-aduser -filter {department -eq 'Financial'})
+Add-ADGroupMember -identity TNRecruiting -members (get-aduser -filter {department -eq 'Recruiting'})
+Add-ADGroupMember -identity TNPlanning -members (get-aduser -filter {department -eq 'Planning'})
+
+Read-Host -Prompt "Press Enter to exit"
